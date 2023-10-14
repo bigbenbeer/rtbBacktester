@@ -7,9 +7,11 @@ if __name__ == '__main__':
     # Initialize indicator manager
     indicatorManager = rtbbacktester.IndicatorManager()
 
+    # Get an indicator import manager
+    indicatorImportManager = rtbbacktester.IndicatorImportManager
+
     # Set the indicators
-    indicatorManager.add_indicator("EMA")
-    indicatorManager.add_indicator("MACD")
+    indicatorManager.add_baseline_indicator(indicatorImportManager.Baseline.EMA)
 
     # Initialize backtester
     backtester = rtbbacktester.Backtester(ticker, indicatorManager)

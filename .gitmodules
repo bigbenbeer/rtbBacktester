@@ -1,0 +1,3 @@
+[submodule "rtbBacktester/rtb_Indicators"]
+	path = rtbBacktester/rtbbacktester/rtb_Indicators
+	url = https://github.com/bigbenbeer/rtb_Indicators
