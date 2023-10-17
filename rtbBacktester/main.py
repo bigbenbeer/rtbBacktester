@@ -3,18 +3,37 @@ import rtbbacktester
 if __name__ == '__main__':
     # Initialize ticker
     ticker = rtbbacktester.Ticker("AAPL")
-    
+
     # Initialize indicator manager
     indicatorManager = rtbbacktester.IndicatorManager()
 
     # Get an indicator import manager
     indicatorImportManager = rtbbacktester.IndicatorImportManager
 
-    # Set the indicators
-    indicatorManager.add_baseline_indicator(indicatorImportManager.Baseline.EMA)
+    indicatorManager.setConfirmationIndicators(
+        indicatorImportManager.Confirmation.list()
+    )
 
-    # Initialize backtester
-    backtester = rtbbacktester.Backtester(ticker, indicatorManager)
+    indicatorManager.setBaselineIndicators(
+        indicatorImportManager.Baseline.list()
+    )
 
-    # Run backtest
-    print(backtester.backtest())
+    indicatorManager.setVolumeIndicators(
+        indicatorImportManager.Volume.list()
+    )
+
+    print(len(indicatorManager.getCombinations()))
+
+    combinations = indicatorManager.getCombinations()
+
+    for combination in combinations:
+        print(combination)
+
+    # # Set the indicators
+    # indicatorManager.add_baseline_indicator(indicatorImportManager.Baseline.EMA)
+
+    # # Initialize backtester
+    # backtester = rtbbacktester.Backtester(ticker, indicatorManager)
+
+    # # Run backtest
+    # print(backtester.backtest())

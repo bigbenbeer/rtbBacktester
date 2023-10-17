@@ -24,5 +24,6 @@ bt = Backtest(GOOG, SmaCross,
               cash=10000, commission=.002,
               exclusive_orders=True)
 
-output = bt.run()
-bt.plot()
+# output = bt.run()
+# print(output)
+# bt.plot()
