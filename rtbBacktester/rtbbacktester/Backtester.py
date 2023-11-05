@@ -1,4 +1,4 @@
-from .Ticker import Ticker
+from .rtbTickers.TickerBaseclass import Ticker
 from .IndicatorManager import IndicatorManager
 
 from backtesting import Backtest, Strategy
@@ -21,6 +21,10 @@ class Backtester:
             ticker (Ticker): The ticker to backtest.
             indicator_manager (IndicatorManager): The indicator manager to use during backtesting.
         """
+        if not isinstance(indicator_manager, IndicatorManager):
+            raise TypeError(
+                "indicator_manager must be of type IndicatorManager.")
+
         self.ticker = ticker
         self.indicator_manager = indicator_manager
 
@@ -29,11 +33,17 @@ class Backtester:
         Backtest the ticker with the indicator manager.
         """
 
+        '''
+        Dev Notes: In order to backtest, we need to run a backtest with the given ticker, for each of the combinations
+        of indicators. We can get the combinations of indicators by calling indicator_manager.getCombinations(). This should ideally be run
+        in parallel, but for now, we can run it sequentially. We can use the backtesting library to run the backtest. 
+        '''
+
         class _strategy(Strategy):
-            n1=10
-            n2=20
-            indicatorManager:IndicatorManager = None
-            
+            n1 = 10
+            n2 = 20
+            indicatorManager: IndicatorManager = None
+
             def init(self):
                 close = self.data.Close
                 self.sma1 = self.I(SMA, close, self.n1)

@@ -1,12 +1,6 @@
-from enum import Enum
 from .rtb_Indicators import Indicators
+from .ExtendedEnum import ExtendedEnum
 
-class ExtendedEnum(Enum):
-
-    @classmethod
-    def list(cls):
-        return list(map(lambda c: c.value, cls))
-    
 class IndicatorImportManager:
     """
     Helper class to import indicators    
@@ -60,4 +54,3 @@ class IndicatorImportManager:
         CMF = Indicators.Volume.CMF_Volume_Indicator()
         EOM = Indicators.Volume.EoM_Volume_Indicator()
         WAE = Indicators.Volume.WaddahAttar_Volume_Indicator()
-
