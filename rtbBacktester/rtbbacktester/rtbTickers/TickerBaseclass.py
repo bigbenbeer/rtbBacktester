@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime
 import yfinance as yf
 
+
 class TickerClassification(Enum):
     """
     An enum to represent the classification of a ticker.
@@ -12,14 +13,26 @@ class TickerClassification(Enum):
     STOCKS = "STOCKS"
     METALS = "METALS"
 
+
 class TickerDataSource(Enum):
     YAHOO_FINANCE = auto()
 
+
 class Ticker(ABC):
     """
-    An abstract base class to represent a ticker.
+        An abstract base class to represent a financial ticker.
 
-    A ticker has a symbol and a classification.
+        Attributes:
+            symbol (str): The symbol of the ticker.
+            classification (TickerClassification): The classification of the ticker.
+            startDate (datetime): The start date for retrieving data.
+            endDate (datetime): The end date for retrieving data.
+            dataSource (TickerDataSource): The data source for fetching ticker data.
+
+        Methods:
+            getDataframe(): Retrieves the ticker data as a pandas DataFrame.
+            validate(): Validates the ticker's start and end dates.
+            ...
     """
     _startDate: datetime = None
     _endDate: datetime = None
@@ -124,7 +137,7 @@ class Ticker(ABC):
             A datetime representing the end date of the ticker.
         """
         return self._endDate
-    
+
     @endDate.setter
     def endDate(self, endDate: datetime):
         """
@@ -149,7 +162,7 @@ class Ticker(ABC):
             A `TickerDataSource` enum value representing the data source of the ticker.
         """
         return self._dataSource
-    
+
     @dataSource.setter
     def dataSource(self, dataSource: TickerDataSource):
         """
@@ -176,24 +189,27 @@ class Ticker(ABC):
         # Check if the start date is before the end date
         if self.startDate > self.endDate:
             raise ValueError("Start date must be before the end date.")
-        
+
     def getDataframe(self) -> pd.DataFrame:
         """
-        Gets the dataframe of the ticker.
+        Retrieves the ticker data as a pandas DataFrame from the specified data source.
 
         Returns:
-            A pandas dataframe representing the ticker.
+            pd.DataFrame: A pandas DataFrame containing ticker data.
+
+        Raises:
+            ValueError: If start date or end date is not set.
+            NotImplementedError: If the data source is not recognized.
         """
         # Validate the ticker
         self.validate()
-        
+
         if (self.dataSource == TickerDataSource.YAHOO_FINANCE):
             return self._getYahooFinanceDataframe()
         else:
             raise NotImplementedError("Data source not recognized.")
-        
+
     def _getYahooFinanceDataframe(self) -> pd.DataFrame:
-        # I will implement the logic here later
         startDate = self.startDate.strftime("%Y-%m-%d")
         endDate = self.endDate.strftime("%Y-%m-%d")
 
@@ -208,4 +224,3 @@ class Ticker(ABC):
         )
 
         return data
-        
