@@ -1,4 +1,5 @@
-from TickerBaseclass import Ticker, TickerClassification
+import pandas as pd
+from TickerBaseclass import Ticker, TickerClassification, TickerDataSource
 
 
 class Apple(Ticker):
@@ -14,3 +15,14 @@ class Apple(Ticker):
             symbol="AAPL",
             classification=TickerClassification.STOCKS
         )
+
+    # Set the dataSource property
+    @property
+    def dataSource(self) -> TickerDataSource:
+        """
+        The data source of the ticker.
+
+        Returns:
+            The data source of the ticker.
+        """
+        return TickerDataSource.YAHOO_FINANCE
