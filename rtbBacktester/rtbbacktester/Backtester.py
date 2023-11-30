@@ -2,6 +2,7 @@ from .rtbTickers.TickerBaseclass import Ticker
 from .IndicatorManager import IndicatorManager
 from .BacktesterOptions import BacktesterOptions
 
+
 from .Strategy import rtbStrategy
 
 from backtesting import Backtest, Strategy
@@ -10,9 +11,16 @@ from backtesting.lib import crossover
 from backtesting.test import SMA, GOOG
 
 import inspect
+import time
 
 
 class Backtester:
+    """
+    Backtester class to backtest a ticker with a given indicator manager. This class contains all 
+    the logic to run a backtest on a given ticker with a given indicator manager. This class however
+    does not contain the logic for the strategy. The strategy is defined in the Strategy.py file. 
+    """
+    
     def __init__(self,
                  ticker: Ticker,
                  indicator_manager: IndicatorManager,
@@ -24,14 +32,9 @@ class Backtester:
         Args:
             ticker (Ticker): The ticker to backtest.
             indicator_manager (IndicatorManager): The indicator manager to use during backtesting.
+            options (BacktesterOptions): The options to use during backtesting.
         """
-        if not isinstance(indicator_manager, IndicatorManager):
-            raise TypeError(
-                "indicator_manager must be of type IndicatorManager.")
-        
-        if not isinstance(options, BacktesterOptions):
-            raise TypeError("options must be of type BacktesterOptions.")
-
+        # Set the variables
         self.ticker = ticker
         self.indicator_manager = indicator_manager
         self.options = options
@@ -40,40 +43,50 @@ class Backtester:
         self.ticker.validate()
 
 
+
     def backtest(self) -> str:
         """
         Backtest the ticker with the indicator manager.
         """
 
         '''
-        Dev Notes: In order to backtest, we need to run a backtest with the given ticker, for each of the combinations
-        of indicators. We can get the combinations of indicators by calling indicator_manager.getCombinations(). This should ideally be run
-        in parallel, but for now, we can run it sequentially. We can use the backtesting library to run the backtest. 
-        
-        Logic:
-
-        Preconfig: Run the ticker validation
-
-        1. COnstruct the backtest object
-        2. Get all the indicator combinations
-        3. For each combination, run the backtest
-
-        TODO: Run the combinations in parallel using TQDM and some parallel processing library.
-
+        Dev Notes: In order to backtest, we need to run a backtest with the given ticker, for each 
+        of the combinations of indicators. We can get the combinations of indicators by calling 
+        indicator_manager.getCombinations(). This should ideally be run in parallel, but for now, 
+        we can run it sequentially. We can use the backtesting library to run the backtest. 
+            
+        This class should see all the combinations, however, the strategy should only see one.
         '''
 
-        # Validate the ticker
-
-
+        # Construct the backtest object
         bt = Backtest(
-            GOOG,
-            rtbStrategy,
-            cash=10000,
-            commission=.002,
-            exclusive_orders=True)
+            data = self.ticker.getDataframe(),
+            strategy= rtbStrategy,
+            cash=self.options.cash,
+            commission=self.options.commission,
+            exclusive_orders=True,
+            trade_on_close=True,
+            hedging=False
+        )
+            
+        for combination in self.indicator_manager.combinations:
+            print(f"Running backtest with combination: {combination} \n")
 
-        kwargs = {"indicatorManager": self.indicator_manager}
-        output = bt.run(**kwargs)
-        print(output)
+            # Define the additional inputs to provide.
+            kwargs = {
+                "indicatorCombination": combination,
+                "options": self.options
+            }
+
+            start_time = time.time()  # Start timing
+            output = bt.run(**kwargs)
+            end_time = time.time()  # End timing
+
+            elapsed_time_ms = (end_time - start_time) * 1000  # Calculate elapsed time in milliseconds
+            print(f"Elapsed time: {elapsed_time_ms:.2f} ms\n")
+
+            print("Output:")
+            print(output)
+            print("\n")
 
         return f"Backtesting ticker: {self.ticker.symbol} with indicator manager: {self.indicator_manager}"

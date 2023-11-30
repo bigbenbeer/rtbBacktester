@@ -1,7 +1,7 @@
 from enum import Enum, auto
 from abc import ABC, abstractmethod
 import pandas as pd
-from datetime import datetime
+import datetime
 import yfinance as yf
 
 
@@ -34,8 +34,6 @@ class Ticker(ABC):
             validate(): Validates the ticker's start and end dates.
             ...
     """
-    _startDate: datetime = None
-    _endDate: datetime = None
 
     def __init__(
         self,
@@ -104,7 +102,7 @@ class Ticker(ABC):
         self._classification = classification
 
     @property
-    def startDate(self) -> datetime:
+    def startDate(self) -> datetime.date:
         """
         The start date of the ticker.
 
@@ -114,7 +112,7 @@ class Ticker(ABC):
         return self._startDate
 
     @startDate.setter
-    def startDate(self, startDate: datetime):
+    def startDate(self, startDate: datetime.date):
         """
         Sets the start date of the ticker.
 
@@ -123,13 +121,13 @@ class Ticker(ABC):
         """
 
         # Validate the start date
-        if not isinstance(startDate, datetime):
+        if not isinstance(startDate, datetime.date):
             raise TypeError("Start date must be a datetime.")
 
         self._startDate = startDate
 
     @property
-    def endDate(self) -> datetime:
+    def endDate(self) -> datetime.date:
         """
         The end date of the ticker.
 
@@ -139,7 +137,7 @@ class Ticker(ABC):
         return self._endDate
 
     @endDate.setter
-    def endDate(self, endDate: datetime):
+    def endDate(self, endDate: datetime.date):
         """
         Sets the end date of the ticker.
 
@@ -148,7 +146,7 @@ class Ticker(ABC):
         """
 
         # Validate the end date
-        if not isinstance(endDate, datetime):
+        if not isinstance(endDate, datetime.date):
             raise TypeError("End date must be a datetime.")
 
         self._endDate = endDate
