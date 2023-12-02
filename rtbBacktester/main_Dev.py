@@ -34,7 +34,7 @@ def main():
     indicatorManager = rtbbacktester.IndicatorManager(
         # Set the confirmation indicators
         confirmationIndicators=indicatorImportManager.Confirmation.devList(
-            num_indicators=5
+            num_indicators=2
         ),
 
         # Set the baseline indicators
