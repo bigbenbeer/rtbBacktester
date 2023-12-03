@@ -38,7 +38,7 @@ class StrategyStates(Enum):
     VOLUME_DOUBLE_REJECTION = auto()
 
     # Something happened when a new C1 signal occured so now we wait for one candle
-    C1_1Candle_WAITING = auto()
+    C1_ENTRY_1Candle_WAITING = auto()
 
     # We are not interested in opening a trade because conditions have not been met
     NO_TRADE = auto()

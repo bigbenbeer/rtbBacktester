@@ -13,6 +13,8 @@ from backtesting.test import SMA, GOOG
 import inspect
 import time
 
+import pandas as pd
+
 
 class Backtester:
     """
@@ -72,10 +74,12 @@ class Backtester:
         for combination in self.indicator_manager.combinations:
             print(f"Running backtest with combination: {combination} \n")
 
+            StrategyOutput = []
             # Define the additional inputs to provide.
             kwargs = {
                 "indicatorCombination": combination,
-                "options": self.options
+                "options": self.options,
+                "StrategyOutput": StrategyOutput
             }
 
             start_time = time.time()  # Start timing
@@ -84,9 +88,11 @@ class Backtester:
 
             elapsed_time_ms = (end_time - start_time) * 1000  # Calculate elapsed time in milliseconds
             print(f"Elapsed time: {elapsed_time_ms:.2f} ms\n")
+            
+            # resultspd = pd.DataFrame(StrategyOutput)
+            # print(resultspd)
 
-            print("Output:")
-            print(output)
-            print("\n")
+            # Save resultspd to a csv file with the name of self.ticker.symbol
+            # resultspd.to_csv(f"results/{self.ticker.symbol}.csv")
 
         return f"Backtesting ticker: {self.ticker.symbol} with indicator manager: {self.indicator_manager}"

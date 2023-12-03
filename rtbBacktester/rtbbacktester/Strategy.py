@@ -30,6 +30,8 @@ class rtbStrategy(Strategy):
     # The state of the strategy
     state: StrategyStates = StrategyStates.NONE
 
+    StrategyOutput = None  # type: ignore
+
     def init(self):
         # C1 indicator
         self.c1 = self.I(
@@ -50,12 +52,104 @@ class rtbStrategy(Strategy):
         # ATR indicator
         self.ATR = self.I(ATRIndicator().calculate_values, self.data.df)
 
+    def handle_baseline_Rejection(self, state_log):
+        """
+        Helper function to handle the baseline rejection cases
 
-        
+        Args:
+            state_log : The log of the states that have been passed through
+        """
+        # Check if this is the first time the baseline rejects the signal
+        if not self.state == StrategyStates.C1_ENTRY_1Candle_WAITING:
+            # Log the rejection
+            state_log.append(StrategyStates.BASELINE_SINGLE_REJECTION)
+
+            # Set the state to waiting for the next candle
+            self.state = StrategyStates.C1_ENTRY_1Candle_WAITING
+
+        # Check if we are already in a 1 Candle waiting situation
+        elif self.state == StrategyStates.C1_ENTRY_1Candle_WAITING:
+            # Clear the state
+            self.state = StrategyStates.NONE
+
+            # Log the rejection
+            state_log.append(StrategyStates.BASELINE_DOUBLE_REJECTION)
+            state_log.append(StrategyStates.NO_TRADE)
+
+    def handle_FuCandle_Rejection(self, state_log):
+        """
+        Helper function to handle the FU Candle rejection cases
+
+        Args:
+            state_log : The log of the states that have been passed through
+        """
+        # Check if this is the first time the FU Candle rejects the signal
+        if not self.state == StrategyStates.C1_ENTRY_1Candle_WAITING:
+            # Log the rejection
+            state_log.append(StrategyStates.FU_SINGLE_REJECTION)
+
+            # Set the state to waiting for the next candle
+            self.state = StrategyStates.C1_ENTRY_1Candle_WAITING
+
+        # Check if we are already in a 1 Candle waiting situation
+        elif self.state == StrategyStates.C1_ENTRY_1Candle_WAITING:
+            # Clear the state
+            self.state = StrategyStates.NONE
+
+            # Log the rejection
+            state_log.append(StrategyStates.FU_DOUBLE_REJECTION)
+            state_log.append(StrategyStates.NO_TRADE)
+
+    def handle_C2_Rejection(self, state_log):
+        """
+        Helper function to handle the C2 rejection cases
+
+        Args:
+            state_log : The log of the states that have been passed through
+        """
+        # Check if this is the first time the signal is confirmed
+        if not self.state == StrategyStates.C1_ENTRY_1Candle_WAITING:
+            # Log the confirmation
+            state_log.append(StrategyStates.C2_SINGLE_REJECTION)
+
+            # Set the state to waiting for the next candle
+            self.state = StrategyStates.C1_ENTRY_1Candle_WAITING
+
+        # Check if we are already in a 1 Candle waiting situation
+        elif self.state == StrategyStates.C1_ENTRY_1Candle_WAITING:
+            # Clear the state
+            self.state = StrategyStates.NONE
+
+            # Log the confirmation
+            state_log.append(StrategyStates.C2_DOUBLE_REJECTION)
+            state_log.append(StrategyStates.NO_TRADE)
+
+    def handle_Volume_Rejection(self, state_log):
+        """
+        Helper function to handle the Volume rejection cases
+
+        Args:
+            state_log : The log of the states that have been passed through
+        """
+        # Check if this is the first time the signal is confirmed
+        if not self.state == StrategyStates.C1_ENTRY_1Candle_WAITING:
+            # Log the confirmation
+            state_log.append(StrategyStates.VOLUME_SINGLE_REJECTION)
+
+            # Set the state to waiting for the next candle
+            self.state = StrategyStates.C1_ENTRY_1Candle_WAITING
+
+        # Check if we are already in a 1 Candle waiting situation
+        elif self.state == StrategyStates.C1_ENTRY_1Candle_WAITING:
+            # Clear the state
+            self.state = StrategyStates.NONE
+
+            # Log the confirmation
+            state_log.append(StrategyStates.VOLUME_DOUBLE_REJECTION)
+            state_log.append(StrategyStates.NO_TRADE)
 
     def next(self):
         stateLog = []
-        # print(f"Date: {self.data.index.max()}")
 
         # The warm up date is the date at which the indicators can be used
         WarmUpDate = (self.options.startDate + self.options.warmUpPeriod.value)
@@ -67,7 +161,7 @@ class rtbStrategy(Strategy):
             c1_entry = crossover(self.c1, 0) or crossover(  # type: ignore
                 0, self.c1)  # type: ignore
 
-            if (c1_entry or self.state == StrategyStates.C1_1Candle_WAITING):
+            if (c1_entry or self.state == StrategyStates.C1_ENTRY_1Candle_WAITING):
                 # Check if the entry is a Long or a Short
                 positionType = (
                     lambda c1: {
@@ -113,11 +207,9 @@ class rtbStrategy(Strategy):
 
                                         # Do a type check
                                         if (type(trade.entry_time) == type(baselineFlipDate)):
-                                            condition1 = trade.entry_time > baselineFlipDate  # type: ignore
-                                            # type: ignore
-                                            condition2 = trade.exit_time <= self.data.index[-1]
-                                            # type: ignore
-                                            if (condition1 and condition2):
+                                            con1 = trade.entry_time > baselineFlipDate  # type: ignore
+                                            con2 = trade.exit_time <= self.data.index[-1] # type: ignore
+                                            if (con1 and con2):
                                                 continuationTrade = True
                                                 stateLog.append(
                                                     StrategyStates.CONTINUATION)
@@ -131,25 +223,7 @@ class rtbStrategy(Strategy):
                                     self.state = StrategyStates.ENTER_TRADE
 
                                 elif (not volumeConfirmation):
-                                    # Check if this is the first time the signal is confirmed
-                                    if (not self.state == StrategyStates.C1_1Candle_WAITING):
-                                        # Log the confirmation
-                                        stateLog.append(
-                                            StrategyStates.VOLUME_SINGLE_REJECTION)
-
-                                        # Set the state to waiting for the next candle
-                                        self.state = StrategyStates.C1_1Candle_WAITING
-
-                                    # Check if we are already in a 1 Candle waiting situation
-                                    elif (self.state == StrategyStates.C1_1Candle_WAITING):
-                                        # Clear the state
-                                        self.state = StrategyStates.NONE
-
-                                        # Log the confirmation
-                                        stateLog.append(
-                                            StrategyStates.VOLUME_DOUBLE_REJECTION)
-                                        stateLog.append(
-                                            StrategyStates.NO_TRADE)
+                                    self.handle_Volume_Rejection(stateLog)
 
                             # Continuation trade condition
                             elif (continuationTrade):
@@ -157,64 +231,15 @@ class rtbStrategy(Strategy):
 
                         # Handle the C2 rejection cases
                         elif (not C2Confirmation):
-                            # Check if this is the first time the signal is confirmed
-                            if (not self.state == StrategyStates.C1_1Candle_WAITING):
-                                # Log the confirmation
-                                stateLog.append(
-                                    StrategyStates.C2_SINGLE_REJECTION)
-
-                                # Set the state to waiting for the next candle
-                                self.state = StrategyStates.C1_1Candle_WAITING
-
-                            # Check if we are already in a 1 Candle waiting situation
-                            elif (self.state == StrategyStates.C1_1Candle_WAITING):
-                                # Clear the state
-                                self.state = StrategyStates.NONE
-
-                                # Log the confirmation
-                                stateLog.append(
-                                    StrategyStates.C2_DOUBLE_REJECTION)
-                                stateLog.append(StrategyStates.NO_TRADE)
+                            self.handle_C2_Rejection(stateLog)
 
                     # Handle the FU Candle rejection cases
                     elif (not FuCandleConfirmation):
-                        # Check if this is the first time the FU Candle rejects the signal
-                        if (not self.state == StrategyStates.C1_1Candle_WAITING):
-                            # Log the rejection
-                            stateLog.append(StrategyStates.FU_SINGLE_REJECTION)
-
-                            # Set the state to waiting for the next candle
-                            self.state = StrategyStates.C1_1Candle_WAITING
-
-                        # Check if we are already in a 1 Candle waiting situation
-                        elif (self.state == StrategyStates.C1_1Candle_WAITING):
-                            # Clear the state
-                            self.state = StrategyStates.NONE
-
-                            # Log the rejection
-                            stateLog.append(StrategyStates.FU_DOUBLE_REJECTION)
-                            stateLog.append(StrategyStates.NO_TRADE)
+                        self.handle_FuCandle_Rejection(stateLog)
 
                 # Handle the baseline rejection cases
                 elif (not BaselineConfirmation):
-                    # Check if this is the first time the baseline rejects the signal
-                    if (not self.state == StrategyStates.C1_1Candle_WAITING):
-                        # Log the rejection
-                        stateLog.append(
-                            StrategyStates.BASELINE_SINGLE_REJECTION)
-
-                        # Set the state to waiting for the next candle
-                        self.state = StrategyStates.C1_1Candle_WAITING
-
-                    # Check if we are already in a 1 Candle waiting situation
-                    elif (self.state == StrategyStates.C1_1Candle_WAITING):
-                        # Clear the state
-                        self.state = StrategyStates.NONE
-
-                        # Log the rejection
-                        stateLog.append(
-                            StrategyStates.BASELINE_DOUBLE_REJECTION)
-                        stateLog.append(StrategyStates.NO_TRADE)
+                    self.handle_baseline_Rejection(stateLog)
 
         else:
             # The warm up period is still going on
@@ -227,5 +252,28 @@ class rtbStrategy(Strategy):
             self.sell()
 
         # TODO Handle trade entry here.
-        if(self.state == StrategyStates.ENTER_TRADE):
+        if (self.state == StrategyStates.ENTER_TRADE):
             pass
+
+        # Add new row to self.StrategyOutput
+        self.StrategyOutput.append({
+            'Date': self.data.index.max(),
+            'Open': self.data.Open[-1],
+            'High': self.data.High[-1],
+            'Low': self.data.Low[-1],
+            'Close': self.data.Close[-1],
+            'Volume': self.data.Volume[-1],
+            'C1': self.c1[-1],
+            'C2': self.c2[-1],
+            'Baseline': self.baseline[-1],
+            'Volume': self.volume[-1],
+            'ATR': self.ATR[-1],
+            'State': self.state,
+            'Log': stateLog
+        })
+        
+        # print(f"Date: {self.data.index.max()} | State: {self.state} | Log: {stateLog}")
+
+
+
+    
