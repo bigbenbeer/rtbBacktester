@@ -1,6 +1,10 @@
 import rtbbacktester
 import datetime
+import warnings
 
+warnings.filterwarnings("ignore", category=FutureWarning)
+
+import time
 
 def main():
     """
@@ -83,8 +87,11 @@ def main():
         options=options
     )
 
+
     # Run backtest
+    start_time = time.time()
     backtester.backtest()
+    print("--- %s seconds ---" % (time.time() - start_time))
 
 
 if __name__ == '__main__':

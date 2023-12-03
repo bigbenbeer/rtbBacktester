@@ -15,6 +15,13 @@ import time
 
 import pandas as pd
 
+import concurrent.futures
+import time
+from tqdm import tqdm
+
+import multiprocessing
+
+
 
 class Backtester:
     """
@@ -22,7 +29,7 @@ class Backtester:
     the logic to run a backtest on a given ticker with a given indicator manager. This class however
     does not contain the logic for the strategy. The strategy is defined in the Strategy.py file. 
     """
-    
+
     def __init__(self,
                  ticker: Ticker,
                  indicator_manager: IndicatorManager,
@@ -44,8 +51,6 @@ class Backtester:
         # Validate the ticker
         self.ticker.validate()
 
-
-
     def backtest(self) -> str:
         """
         Backtest the ticker with the indicator manager.
@@ -60,39 +65,58 @@ class Backtester:
         This class should see all the combinations, however, the strategy should only see one.
         '''
 
-        # Construct the backtest object
+        with tqdm(total=len(self.indicator_manager.combinations)) as pbar:
+            def update(*_):
+                pbar.update()
+
+            # Run the loop in parallel
+            num_threads = multiprocessing.cpu_count()
+            # num_threads = 1
+            with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
+                futures = [executor.submit(self.process_combination, combination) for combination in self.indicator_manager.combinations]
+                for future in concurrent.futures.as_completed(futures):
+                    update()
+
+        return f"Backtesting ticker: {self.ticker.symbol} with indicator manager: {self.indicator_manager}"
+
+    def process_combination(self, combination):
+        # print(f"Running backtest with combination: {combination}\n")
+
         bt = Backtest(
-            data = self.ticker.getDataframe(),
-            strategy= rtbStrategy,
+            data=self.ticker.getDataframe(),
+            strategy=rtbStrategy,
             cash=self.options.cash,
             commission=self.options.commission,
             exclusive_orders=True,
             trade_on_close=True,
             hedging=False
         )
-            
-        for combination in self.indicator_manager.combinations:
-            print(f"Running backtest with combination: {combination} \n")
 
-            StrategyOutput = []
-            # Define the additional inputs to provide.
-            kwargs = {
-                "indicatorCombination": combination,
-                "options": self.options,
-                "StrategyOutput": StrategyOutput
-            }
+        StrategyOutput = []
+        # Define the additional inputs to provide.
+        kwargs = {
+            "indicatorCombination": combination,
+            "options": self.options,
+            "StrategyOutput": StrategyOutput
+        }
 
+        try:
             start_time = time.time()  # Start timing
+
             output = bt.run(**kwargs)
             end_time = time.time()  # End timing
-
-            elapsed_time_ms = (end_time - start_time) * 1000  # Calculate elapsed time in milliseconds
+            elapsed_time_ms = (end_time - start_time) * 1000
             print(f"Elapsed time: {elapsed_time_ms:.2f} ms\n")
-            
-            # resultspd = pd.DataFrame(StrategyOutput)
-            # print(resultspd)
+        
+        except Exception as e:
+            print(f"Error in backtesting with combination: {combination}")
+            print(e)
 
-            # Save resultspd to a csv file with the name of self.ticker.symbol
-            # resultspd.to_csv(f"results/{self.ticker.symbol}.csv")
+        # Calculate elapsed time in milliseconds
 
-        return f"Backtesting ticker: {self.ticker.symbol} with indicator manager: {self.indicator_manager}"
+
+        # resultspd = pd.DataFrame(StrategyOutput)
+        # print(resultspd)
+
+        # Save resultspd to a csv file with the name of self.ticker.symbol
+        # resultspd.to_csv(f"results/{self.ticker.symbol}.csv")
