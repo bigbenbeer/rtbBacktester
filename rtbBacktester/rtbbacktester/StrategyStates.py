@@ -13,6 +13,15 @@ class StrategyStates(Enum):
     # C1 Trade entry has occured and it is for a short position
     C1_SHORT = auto()
 
+    # C1 Signal rejected
+    C1_REJECTED = auto()
+
+    # Baseline Long Signal has occured
+    BASELINE_LONG = auto()
+
+    # Baseline Short Signal has occured
+    BASELINE_SHORT = auto()
+
     # Signal blocked by baseline rejection for the first time
     BASELINE_SINGLE_REJECTION = auto()
 
@@ -40,6 +49,9 @@ class StrategyStates(Enum):
     # Something happened when a new C1 signal occured so now we wait for one candle
     C1_ENTRY_1Candle_WAITING = auto()
 
+    # Something happened when a new Baseline signal occured so now we wait for one candle
+    BASELINE_ENTRY_1Candle_WAITING = auto()
+
     # We are not interested in opening a trade because conditions have not been met
     NO_TRADE = auto()
 
@@ -48,6 +60,9 @@ class StrategyStates(Enum):
 
     # A continuation trade  event has occured
     CONTINUATION = auto()
+
+    # 7 Candle rejection
+    SEVEN_CANDLE_REJECTION = auto()
 
 
 

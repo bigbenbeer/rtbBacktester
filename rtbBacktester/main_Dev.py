@@ -1,6 +1,8 @@
 import rtbbacktester
 import datetime
+import warnings
 
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 def main():
     """
