@@ -2,7 +2,7 @@ from ast import List
 from email.mime import base
 from enum import Enum, auto
 from stringprep import c22_specials
-from turtle import st
+from turtle import position, st
 from backtesting import Backtest, Strategy
 from backtesting.lib import crossover
 
@@ -38,24 +38,26 @@ class rtbStrategy(Strategy):
     StrategyOutput = None  # type: ignore
 
     def init(self):
+        super().init() 
         # C1 indicator
         self.c1 = self.I(
-            self.indicatorCombination.c1.calculate_signals, self.data.df)
+            self.indicatorCombination.c1.calculate_signals, self.data.df, name="C1")
 
         # C2 indicator
         self.c2 = self.I(
-            self.indicatorCombination.c2.calculate_signals, self.data.df)
+            self.indicatorCombination.c2.calculate_signals, self.data.df, name="C2")
 
         # Baseline indicator
         self.baseline = self.I(
-            self.indicatorCombination.baseline.calculate_signals, self.data.df)
+            self.indicatorCombination.baseline.calculate_signals, self.data.df, name="Baseline")
 
         # Volume indicator
         self.volume = self.I(
-            self.indicatorCombination.volume.calculate_signals, self.data.df)
+            self.indicatorCombination.volume.calculate_signals, self.data.df, name="Volume")
 
         # ATR indicator
-        self.ATR = self.I(ATRIndicator().calculate_values, self.data.df)
+        self.ATR = self.I(ATRIndicator().calculate_values,
+                          self.data.df, name="ATR")
 
     def handle_baseline_Rejection(self, state_log):
         """
@@ -203,10 +205,15 @@ class rtbStrategy(Strategy):
             self.state = StrategyStates.NO_TRADE
 
     def next(self):
+        # Docs say we have to do it like this
+        super().next() 
+
+
         stateLog = []
 
         # The warm up date is the date at which the indicators can be used
-        WarmUpDate = (self.options.startDate + self.options.warmUpPeriod.value)
+        WarmUpDate = (self.options.start_date +
+                      self.options.warm_up_period.value)
 
         # Check if we are past the warm up date
         if (self.data.index.max() >= WarmUpDate):
@@ -283,7 +290,8 @@ class rtbStrategy(Strategy):
                                     self.state = StrategyStates.ENTER_TRADE
 
                                 elif (not volumeConfirmation):
-                                    self.handle_Volume_Rejection(stateLog, originState=positionType)
+                                    self.handle_Volume_Rejection(
+                                        stateLog, originState=positionType)
 
                             # Continuation trade condition
                             elif (continuationTrade):
@@ -291,7 +299,8 @@ class rtbStrategy(Strategy):
 
                         # Handle the C2 rejection cases
                         elif (not C2Confirmation):
-                            self.handle_C2_Rejection(stateLog, originState=positionType)
+                            self.handle_C2_Rejection(
+                                stateLog, originState=positionType)
 
                     # Handle the FU Candle rejection cases
                     elif (not FuCandleConfirmation):
@@ -384,10 +393,63 @@ class rtbStrategy(Strategy):
         elif crossover(self.c2, self.c1):  # type: ignore
             self.sell()
 
-        # TODO Handle trade entry here.
+        # Handle the trade entry logic here.
         if (self.state == StrategyStates.ENTER_TRADE):
-            print(
-                f"Date: {self.data.index.max()} | State: {self.state} | Log: {stateLog}")
+            # Check if the entry is a Long or a Short
+            positionType = (
+                lambda baseline: {
+                    1: StrategyStates.BASELINE_LONG,
+                    -1: StrategyStates.BASELINE_SHORT,
+                }.get(baseline, StrategyStates.NONE)
+            )(self.baseline[-1])
+
+            # Handle long trade entry
+            if (positionType == StrategyStates.C1_LONG or positionType == StrategyStates.BASELINE_LONG):
+                # Calculate the stop loss
+                stopLossPrice = self.data.Close[-1] - \
+                    (self.ATR[-1] * self.options.stopLossATRMultiple)
+
+                # Calculate the take profit
+                takeProfitPrice = self.data.Close[-1] + \
+                    (self.ATR[-1] * self.options.takeProfitATRMultiple)
+
+                # Calculate the position size
+                positionSize = (self.options.cash * self.options.risk) / \
+                    (self.data.Close[-1] - stopLossPrice)
+
+                # Open a long position
+                self.buy(
+                    size=positionSize,
+                    sl=stopLossPrice,
+                    tp=takeProfitPrice
+                )
+
+                self.state = StrategyStates.OPEN_ORDERS
+
+            # Handle short trade entry
+            elif (positionType == StrategyStates.C1_SHORT or positionType == StrategyStates.BASELINE_SHORT):
+                # Calculate the stop loss
+                stopLossPrice = self.data.Close[-1] + \
+                    (self.ATR[-1] * self.options.stopLossATRMultiple)
+
+                # Calculate the take profit
+                takeProfitPrice = self.data.Close[-1] - \
+                    (self.ATR[-1] * self.options.takeProfitATRMultiple)
+
+                # Calculate the position size
+                positionSize = (self.options.cash * self.options.risk) / \
+                    (stopLossPrice - self.data.Close[-1])
+
+                self.sell(
+                    size=positionSize,
+                    sl=stopLossPrice,
+                    tp=takeProfitPrice
+                )
+
+                self.state = StrategyStates.OPEN_ORDERS
+
+        print(
+            f"Date: {self.data.index.max()} | State: {self.state} | Log: {stateLog}")
 
         # Add new row to self.StrategyOutput
         self.StrategyOutput.append({

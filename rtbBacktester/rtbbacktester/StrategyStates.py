@@ -64,5 +64,8 @@ class StrategyStates(Enum):
     # 7 Candle rejection
     SEVEN_CANDLE_REJECTION = auto()
 
+    # There are open orders
+    OPEN_ORDERS = auto()
+
 
 

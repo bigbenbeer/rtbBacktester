@@ -88,7 +88,7 @@ class Backtester:
             cash=self.options.cash,
             commission=self.options.commission,
             exclusive_orders=True,
-            trade_on_close=True,
+            trade_on_close=True, # Trade on close of current candle
             hedging=False
         )
 

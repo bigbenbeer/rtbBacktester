@@ -61,13 +61,13 @@ def main():
     # Configure the options for the backtester:
     options = rtbbacktester.BacktesterOptions(
         # When to start the backtest
-        startDate=datetime.datetime(year=2017, month=1, day=1),
+        start_date=datetime.datetime(year=2017, month=1, day=1),
 
         # When to end the backtest
-        endDate=datetime.datetime(year=2022, month=12, day=31),
+        end_date=datetime.datetime(year=2022, month=12, day=31),
 
         # The warm up period for the backtest
-        warmUpPeriod=rtbbacktester.warmUpPeriod.SIX_MONTHS,
+        warm_up_period=rtbbacktester.warmUpPeriod.SIX_MONTHS,
 
         # Whether to include pre and post market data
         prepost=False,
@@ -77,6 +77,9 @@ def main():
 
         # Commission per trade. This value is a percentage value defined as float. E.G. 0.01 = 1%
         commission=0.0
+
+        # The risk percentage per trade. This value is a percentage value defined as float. E.G. 0.01 = 1%
+        risk=0.02
     )
 
     # TODO Make sure the ticker is valid in the time period specified
