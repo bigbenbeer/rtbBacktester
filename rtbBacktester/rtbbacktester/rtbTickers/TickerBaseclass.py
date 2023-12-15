@@ -38,7 +38,9 @@ class Ticker(ABC):
     def __init__(
         self,
         symbol: str,
-        classification: TickerClassification
+        classification: TickerClassification,
+        startDate: datetime.date,
+        endDate: datetime.date
     ):
         """
         Creates a new ticker.
@@ -50,6 +52,8 @@ class Ticker(ABC):
 
         self.symbol = symbol
         self.classification = classification
+        self.startDate = startDate
+        self.endDate = endDate
 
     @property
     def symbol(self) -> str:

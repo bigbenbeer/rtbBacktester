@@ -3,6 +3,7 @@ from email.mime import base
 from enum import Enum, auto
 from stringprep import c22_specials
 from turtle import position, st
+from xmlrpc.client import Boolean
 from backtesting import Backtest, Strategy
 from backtesting.lib import crossover
 
@@ -23,22 +24,19 @@ class rtbStrategy(Strategy):
     rtbStrategy class to define the strategy that will be used in the backtest. The backtester 
     controls the backtesting process, this class controls the algorithm that will be backtested.
     """
-    n1 = 10
-    n2 = 20
-
     # The indicator combination to use for this run
-    indicatorCombination: IndicatorCombination = None  # type: ignore
+    indicatorCombination: IndicatorCombination = None # type: ignore
 
     # The options to use for this run
-    options: BacktesterOptions = None  # type: ignore
+    options: BacktesterOptions = None # type: ignore
 
     # The state of the strategy
     state: StrategyStates = StrategyStates.NONE
 
-    StrategyOutput = None  # type: ignore
+    StrategyOutput = None
 
     def init(self):
-        super().init() 
+        super().init()
         # C1 indicator
         self.c1 = self.I(
             self.indicatorCombination.c1.calculate_signals, self.data.df, name="C1")
@@ -204,11 +202,55 @@ class rtbStrategy(Strategy):
             state_log.append(StrategyStates.VOLUME_SINGLE_REJECTION)
             self.state = StrategyStates.NO_TRADE
 
+    def handle_Flip_Exits(self, state_log):
+
+        def handle_Flip_Exit(condition: Boolean, exit_state: StrategyStates, state_log):
+            if condition:
+                self.position.close()
+                self.state = exit_state
+                state_log.append(self.state)
+
+        if (self.position.is_long):
+            # Handle Long positions
+            handle_Flip_Exit(
+                condition=crossover(0, self.baseline),  # type: ignore
+                exit_state=StrategyStates.BASELINE_FLIP_EXIT_LONG,
+                state_log=state_log
+            )
+
+            handle_Flip_Exit(
+                condition=crossover(0, self.c1),  # type: ignore
+                exit_state=StrategyStates.C1_FLIP_EXIT_LONG,
+                state_log=state_log
+            )
+
+            handle_Flip_Exit(
+                condition=crossover(0, self.c2),  # type: ignore
+                exit_state=StrategyStates.C2_FLIP_EXIT_LONG,
+                state_log=state_log
+            )
+
+        elif (self.position.is_short):
+            # Handle short positions
+            handle_Flip_Exit(
+                condition=crossover(self.baseline, 0),  # type: ignore
+                exit_state=StrategyStates.BASELINE_FLIP_EXIT_SHORT,
+                state_log=state_log
+            )
+
+            handle_Flip_Exit(
+                condition=crossover(self.c1, 0),  # type: ignore
+                exit_state=StrategyStates.C1_FLIP_EXIT_SHORT,
+                state_log=state_log
+            )
+
+            handle_Flip_Exit(
+                condition=crossover(self.c2, 0),  # type: ignore
+                exit_state=StrategyStates.C2_FLIP_EXIT_SHORT,
+                state_log=state_log
+            )
+
     def next(self):
-        # Docs say we have to do it like this
-        super().next() 
-
-
         stateLog = []
 
         # The warm up date is the date at which the indicators can be used
@@ -219,12 +261,12 @@ class rtbStrategy(Strategy):
         if (self.data.index.max() >= WarmUpDate):
 
             # C1 Entry
-            c1_entry = crossover(self.c1, 0) or crossover(  # type: ignore
-                0, self.c1)  # type: ignore
+            c1_entry = crossover(self.c1, 0) or crossover(
+                0, self.c1)
 
             # Baseline Entry
-            baseline_entry = crossover(self.baseline, 0) or crossover(  # type: ignore
-                0, self.baseline)  # type: ignore
+            baseline_entry = crossover(self.baseline, 0) or crossover(
+                0, self.baseline)
 
             # Handle the C1 entry cases
             if (c1_entry or self.state == StrategyStates.C1_ENTRY_1Candle_WAITING):
@@ -273,8 +315,8 @@ class rtbStrategy(Strategy):
 
                                         # Do a type check
                                         if (type(trade.entry_time) == type(baselineFlipDate)):
-                                            con1 = trade.entry_time > baselineFlipDate  # type: ignore
-                                            # type: ignore
+                                            con1 = trade.entry_time > baselineFlipDate
+
                                             con2 = trade.exit_time <= self.data.index[-1]
                                             if (con1 and con2):
                                                 continuationTrade = True
@@ -287,7 +329,10 @@ class rtbStrategy(Strategy):
                                 volumeConfirmation = self.volume[-1] == self.c1[-1]
 
                                 if (volumeConfirmation):
-                                    self.state = StrategyStates.ENTER_TRADE
+                                    if (positionType == StrategyStates.C1_LONG):
+                                        self.state = StrategyStates.C1_LONG_ENTRY
+                                    elif (positionType == StrategyStates.C1_SHORT):
+                                        self.state = StrategyStates.C1_SHORT_ENTRY
 
                                 elif (not volumeConfirmation):
                                     self.handle_Volume_Rejection(
@@ -295,7 +340,10 @@ class rtbStrategy(Strategy):
 
                             # Continuation trade condition
                             elif (continuationTrade):
-                                self.state = StrategyStates.ENTER_TRADE
+                                if (positionType == StrategyStates.C1_LONG):
+                                    self.state = StrategyStates.C1_LONG_ENTRY
+                                elif (positionType == StrategyStates.C1_SHORT):
+                                    self.state = StrategyStates.C1_SHORT_ENTRY
 
                         # Handle the C2 rejection cases
                         elif (not C2Confirmation):
@@ -354,9 +402,10 @@ class rtbStrategy(Strategy):
 
                                 # Handle the Volume confirmation cases
                                 if (volumeConfirmation):
-                                    self.state = StrategyStates.ENTER_TRADE
-                                    stateLog.append(
-                                        StrategyStates.ENTER_TRADE)
+                                    if (positionType == StrategyStates.BASELINE_LONG):
+                                        self.state = StrategyStates.BASELINE_LONG_ENTRY
+                                    elif (positionType == StrategyStates.BASELINE_SHORT):
+                                        self.state = StrategyStates.BASELINE_SHORT_ENTRY
 
                                 # Handle the Volume rejection cases
                                 elif (not volumeConfirmation):
@@ -387,24 +436,44 @@ class rtbStrategy(Strategy):
             # The warm up period is still going on
             self.state = StrategyStates.WARMUP_PERIOD
 
-        #  Ignore the following, its just example code
-        if crossover(self.c1, self.c2):  # type: ignore
-            self.buy()
-        elif crossover(self.c2, self.c1):  # type: ignore
-            self.sell()
+        # #  Ignore the following, its just example code
+        # if crossover(self.c1, self.c2):
+        #     self.buy()
+        # elif crossover(self.c2, self.c1):
+        #     self.sell()
 
         # Handle the trade entry logic here.
-        if (self.state == StrategyStates.ENTER_TRADE):
-            # Check if the entry is a Long or a Short
-            positionType = (
-                lambda baseline: {
-                    1: StrategyStates.BASELINE_LONG,
-                    -1: StrategyStates.BASELINE_SHORT,
-                }.get(baseline, StrategyStates.NONE)
-            )(self.baseline[-1])
+        tradeEntryCondition = (
+            lambda state: {
+                StrategyStates.C1_LONG_ENTRY: True,
+                StrategyStates.C1_SHORT_ENTRY: True,
+                StrategyStates.BASELINE_LONG_ENTRY: True,
+                StrategyStates.BASELINE_SHORT_ENTRY: True,
+            }.get(state, False)
+        )(self.state)
+
+        if (tradeEntryCondition):
+            # Log the trade entry
+            stateLog.append(self.state)
+
+            # Check if position type is long
+            isLong = (
+                lambda state: {
+                    StrategyStates.C1_LONG_ENTRY: True,
+                    StrategyStates.BASELINE_LONG_ENTRY: True,
+                }.get(state, False)
+            )(self.state)
+
+            # Check if position type is short
+            isShort = (
+                lambda state: {
+                    StrategyStates.C1_SHORT_ENTRY: True,
+                    StrategyStates.BASELINE_SHORT_ENTRY: True,
+                }.get(state, False)
+            )(self.state)
 
             # Handle long trade entry
-            if (positionType == StrategyStates.C1_LONG or positionType == StrategyStates.BASELINE_LONG):
+            if (isLong):
                 # Calculate the stop loss
                 stopLossPrice = self.data.Close[-1] - \
                     (self.ATR[-1] * self.options.stopLossATRMultiple)
@@ -414,6 +483,7 @@ class rtbStrategy(Strategy):
                     (self.ATR[-1] * self.options.takeProfitATRMultiple)
 
                 # Calculate the position size
+                TODO("Calculate position size for the Forex situation")
                 positionSize = (self.options.cash * self.options.risk) / \
                     (self.data.Close[-1] - stopLossPrice)
 
@@ -424,10 +494,11 @@ class rtbStrategy(Strategy):
                     tp=takeProfitPrice
                 )
 
-                self.state = StrategyStates.OPEN_ORDERS
+                self.state = StrategyStates.LONG_ORDER_OPENED
+                stateLog.append(self.state)
 
             # Handle short trade entry
-            elif (positionType == StrategyStates.C1_SHORT or positionType == StrategyStates.BASELINE_SHORT):
+            elif (isShort):
                 # Calculate the stop loss
                 stopLossPrice = self.data.Close[-1] + \
                     (self.ATR[-1] * self.options.stopLossATRMultiple)
@@ -436,6 +507,7 @@ class rtbStrategy(Strategy):
                 takeProfitPrice = self.data.Close[-1] - \
                     (self.ATR[-1] * self.options.takeProfitATRMultiple)
 
+                TODO("Calculate the position size for the Forex situation")
                 # Calculate the position size
                 positionSize = (self.options.cash * self.options.risk) / \
                     (stopLossPrice - self.data.Close[-1])
@@ -446,7 +518,16 @@ class rtbStrategy(Strategy):
                     tp=takeProfitPrice
                 )
 
-                self.state = StrategyStates.OPEN_ORDERS
+                self.state = StrategyStates.SHORT_ORDER_OPENED
+                stateLog.append(self.state)
+
+        if (self.position):
+            # Handle all the indicator flip exits elsewhere
+            self.handle_Flip_Exits(stateLog)
+
+        # Run the super().next() function at the end to prevent it from closing orders
+        # before we get to modify the orders. I.E. Trailing
+        super().next()
 
         print(
             f"Date: {self.data.index.max()} | State: {self.state} | Log: {stateLog}")
@@ -467,3 +548,8 @@ class rtbStrategy(Strategy):
             'State': self.state,
             'Log': stateLog
         })
+
+
+def TODO(message:str = ""):
+    raise NotImplementedError(
+        f"This function has not been implemented yet: {message}")

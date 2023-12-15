@@ -55,10 +55,10 @@ def main():
     # Configure the options for the backtester:
     options = rtbbacktester.BacktesterOptions(
         # When to start the backtest
-        startDate=datetime.datetime(year=2017, month=1, day=1),
+        start_date=datetime.datetime(year=2017, month=1, day=1),
 
         # When to end the backtest
-        endDate=datetime.datetime(year=2022, month=12, day=31),
+        end_date=datetime.datetime(year=2022, month=12, day=31),
 
         # The warm up period for the backtest
         warmUpPeriod=rtbbacktester.warmUpPeriod.SIX_MONTHS,

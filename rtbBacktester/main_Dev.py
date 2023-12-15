@@ -1,3 +1,4 @@
+from turtle import st
 import rtbbacktester
 import datetime
 import warnings
@@ -76,7 +77,7 @@ def main():
         cash=10_000,
 
         # Commission per trade. This value is a percentage value defined as float. E.G. 0.01 = 1%
-        commission=0.0
+        commission=0.0,
 
         # The risk percentage per trade. This value is a percentage value defined as float. E.G. 0.01 = 1%
         risk=0.02
@@ -85,9 +86,10 @@ def main():
     # TODO Make sure the ticker is valid in the time period specified
 
     # Get the ticker
-    ticker = rtbbacktester.TickerImportManager.Stocks.AAPL.value
-    ticker.startDate = options.startDate
-    ticker.endDate = options.endDate
+    ticker = rtbbacktester.rtbTickers.Tickers.Stocks.Apple(
+        startDate=options.start_date,
+        endDate=options.end_date
+    )
 
     # Initialize backtester
     backtester = rtbbacktester.Backtester(
@@ -97,7 +99,13 @@ def main():
     )
 
     # Run backtest
-    backtester.backtest()
+    try:
+        backtester.backtest()
+    except Exception as e:
+        print(e)
+        # Orint the stack trace
+        import traceback    
+        traceback.print_exc()
 
 
 if __name__ == '__main__':

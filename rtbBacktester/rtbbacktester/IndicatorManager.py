@@ -56,9 +56,3 @@ class IndicatorManager:
 
     def __str__(self):
         return f"IndicatorManager with baselines: {self.baselineIndicators}, confirmation indicators: {self.confirmationIndicators}, and volume indicators: {self.volumeIndicators}"
-
-
-if __name__ == '__main__':
-    # Initialize ticker
-    # Initialize indicator manager
-    indicatorManager = IndicatorManager()

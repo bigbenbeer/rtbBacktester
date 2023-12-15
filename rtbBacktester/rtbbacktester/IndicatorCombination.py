@@ -19,3 +19,6 @@ class IndicatorCombination:
 
     # Volume indicator
     volume: Indicators.Indicator
+
+    # Property to denote if a combination has an exit indicator
+    hasExit: bool = False

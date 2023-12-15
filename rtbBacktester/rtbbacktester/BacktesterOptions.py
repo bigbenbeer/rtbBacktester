@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import datetime
 from enum import Enum
+from .rtbTickers.Tickers.Forex.ForexLotSizes import ForexLotSizes
 
 
 class warmUpPeriod(Enum):
@@ -36,5 +37,6 @@ class BacktesterOptions:
 
     # The take profit multiple of the ATR
     takeProfitATRMultiple: float = 1.0
-    
 
+    # Minimum lot size for FOREX
+    minimumLotSize: ForexLotSizes = ForexLotSizes.MINI

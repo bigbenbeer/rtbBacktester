@@ -65,6 +65,8 @@ class Backtester:
         This class should see all the combinations, however, the strategy should only see one.
         '''
 
+        self.tickerData = self.ticker.getDataframe()
+
         with tqdm(total=len(self.indicator_manager.combinations)) as pbar:
             def update(*_):
                 pbar.update()
@@ -83,7 +85,7 @@ class Backtester:
         # print(f"Running backtest with combination: {combination}\n")
 
         bt = Backtest(
-            data=self.ticker.getDataframe(),
+            data=self.tickerData,
             strategy=rtbStrategy,
             cash=self.options.cash,
             commission=self.options.commission,
