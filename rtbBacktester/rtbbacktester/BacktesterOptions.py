@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import datetime
 from enum import Enum
-from .rtbTickers.Tickers.Forex.ForexLotSizes import ForexLotSizes
+from .rtbTickers.ForexLotSizes import ForexLotSizes
 
 
 class warmUpPeriod(Enum):
@@ -18,7 +18,7 @@ class BacktesterOptions:
     end_date: datetime.date
 
     # The warm up period for the backtest run in which no trading takes places
-    warm_up_period: warmUpPeriod = warmUpPeriod.NONE
+    warm_up_period: warmUpPeriod = warmUpPeriod.SIX_MONTHS
 
     # Prepost trading is trading that occurs before and after the market opens and closes
     prepost: bool = False

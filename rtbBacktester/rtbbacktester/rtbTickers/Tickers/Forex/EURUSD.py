@@ -1,7 +1,12 @@
 import pandas as pd
-from TickerBaseclass import Ticker, TickerClassification, TickerDataSource
-from .ForexLotSizes import ForexLotSizes as LotSizes
 import datetime
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from TickerBaseclass import Ticker, TickerClassification, TickerDataSource
+from ForexLotSizes import ForexLotSizes
 
 class EURUSD(Ticker):
     """
@@ -12,7 +17,7 @@ class EURUSD(Ticker):
             self, 
             startDate: datetime.date, 
             endDate: datetime.date,
-            smallestLotSize: LotSizes
+            smallestLotSize: ForexLotSizes = ForexLotSizes.NONE
             ):
         """
         Creates a new Apple ticker.
@@ -36,24 +41,13 @@ class EURUSD(Ticker):
         """
         return TickerDataSource.YAHOO_FINANCE
     
-    # Set the lotSize property
-    @property
-    def lotSize(self) -> int:
-        """
-        The lot size of the ticker.
-
-        Returns:
-            The lot size of the ticker.
-        """
-        return LotSizes.MICRO.value
-    
 
 # Create a main function
 def main():
     ticker = EURUSD(
         startDate=datetime.date(year=2017, month=1, day=1),
         endDate=datetime.date(year=2022, month=12, day=31),
-        smallestLotSize=LotSizes.MICRO
+        smallestLotSize=ForexLotSizes.MICRO
     )
 
     print(ticker.symbol)

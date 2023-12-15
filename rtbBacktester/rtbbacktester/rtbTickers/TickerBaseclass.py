@@ -4,7 +4,7 @@ import pandas as pd
 import datetime
 import yfinance as yf
 
-from rtbbacktester.rtbTickers.Tickers.Forex import ForexLotSizes
+from ForexLotSizes import ForexLotSizes
 
 
 class TickerClassification(Enum):

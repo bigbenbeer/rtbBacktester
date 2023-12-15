@@ -1,7 +1,12 @@
-from turtle import st
-import rtbbacktester
-import datetime
+from rtbbacktester import IndicatorImportManager
+from rtbbacktester import IndicatorManager
+from rtbbacktester import BacktesterOptions
+from rtbbacktester.rtbTickers.ForexLotSizes import ForexLotSizes
+from rtbbacktester.rtbTickers import Tickers
+from rtbbacktester import Backtester
+from datetime import datetime
 import warnings
+
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -32,10 +37,10 @@ def main():
     7. Instantiate a ticker.
     """
     # Get an indicator import manager
-    indicatorImportManager = rtbbacktester.IndicatorImportManager
+    indicatorImportManager = IndicatorImportManager
 
     # Initialize indicator manager
-    indicatorManager = rtbbacktester.IndicatorManager(
+    indicatorManager = IndicatorManager(
         # Set the confirmation indicators
         confirmationIndicators=indicatorImportManager.Confirmation.devList(
             num_indicators=2
@@ -60,15 +65,15 @@ def main():
     #     print("No combinations found.")
 
     # Configure the options for the backtester:
-    options = rtbbacktester.BacktesterOptions(
+    options = BacktesterOptions(
         # When to start the backtest
-        start_date=datetime.datetime(year=2017, month=1, day=1),
+        start_date=datetime(year=2017, month=1, day=1),
 
         # When to end the backtest
-        end_date=datetime.datetime(year=2022, month=12, day=31),
+        end_date=datetime(year=2022, month=12, day=31),
 
         # The warm up period for the backtest
-        warm_up_period=rtbbacktester.warmUpPeriod.SIX_MONTHS,
+        # warm_up_period=rtbbacktester.warmUpPeriod.SIX_MONTHS,
 
         # Whether to include pre and post market data
         prepost=False,
@@ -82,19 +87,21 @@ def main():
         # The risk percentage per trade. This value is a percentage value defined as float. E.G. 0.01 = 1%
         risk=0.02,
 
-        smallestLotSize=rtbbacktester.rtbTickers.Tickers.Forex.ForexLotSizes.MINI
+        smallestLotSize=ForexLotSizes.MICRO
     )
 
     # TODO Make sure the ticker is valid in the time period specified
 
     # Get the ticker
-    ticker = rtbbacktester.rtbTickers.Tickers.Stocks.Apple(
+    ticker = Tickers.Forex.EURUSD(
         startDate=options.start_date,
-        endDate=options.end_date
+        endDate=options.end_date,
+        smallestLotSize = options.smallestLotSize
     )
+    
 
     # Initialize backtester
-    backtester = rtbbacktester.Backtester(
+    backtester = Backtester(
         ticker=ticker,
         indicator_manager=indicatorManager,
         options=options
