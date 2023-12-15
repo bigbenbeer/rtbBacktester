@@ -5,6 +5,7 @@ import warnings
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
+
 def main():
     """
     DEV NOTES:
@@ -58,7 +59,6 @@ def main():
     # else:
     #     print("No combinations found.")
 
-
     # Configure the options for the backtester:
     options = rtbbacktester.BacktesterOptions(
         # When to start the backtest
@@ -80,7 +80,9 @@ def main():
         commission=0.0,
 
         # The risk percentage per trade. This value is a percentage value defined as float. E.G. 0.01 = 1%
-        risk=0.02
+        risk=0.02,
+
+        smallestLotSize=rtbbacktester.rtbTickers.Tickers.Forex.ForexLotSizes.MINI
     )
 
     # TODO Make sure the ticker is valid in the time period specified
@@ -104,7 +106,7 @@ def main():
     except Exception as e:
         print(e)
         # Orint the stack trace
-        import traceback    
+        import traceback
         traceback.print_exc()
 
 

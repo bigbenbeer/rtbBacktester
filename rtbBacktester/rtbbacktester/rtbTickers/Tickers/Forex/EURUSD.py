@@ -8,7 +8,12 @@ class EURUSD(Ticker):
     A class to represent the Apple stock ticker.
     """
 
-    def __init__(self, startDate: datetime.date, endDate: datetime.date):
+    def __init__(
+            self, 
+            startDate: datetime.date, 
+            endDate: datetime.date,
+            smallestLotSize: LotSizes
+            ):
         """
         Creates a new Apple ticker.
         """
@@ -16,7 +21,8 @@ class EURUSD(Ticker):
             symbol="EURUSD=X",
             classification=TickerClassification.FOREX,
             startDate=startDate,
-            endDate=endDate
+            endDate=endDate,
+            smallestLotSize=smallestLotSize
         )
 
     # Set the dataSource property
@@ -44,7 +50,11 @@ class EURUSD(Ticker):
 
 # Create a main function
 def main():
-    ticker = EURUSD()
+    ticker = EURUSD(
+        startDate=datetime.date(year=2017, month=1, day=1),
+        endDate=datetime.date(year=2022, month=12, day=31),
+        smallestLotSize=LotSizes.MICRO
+    )
 
     print(ticker.symbol)
 

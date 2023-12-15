@@ -4,6 +4,8 @@ import pandas as pd
 import datetime
 import yfinance as yf
 
+from rtbbacktester.rtbTickers.Tickers.Forex import ForexLotSizes
+
 
 class TickerClassification(Enum):
     """
@@ -40,7 +42,8 @@ class Ticker(ABC):
         symbol: str,
         classification: TickerClassification,
         startDate: datetime.date,
-        endDate: datetime.date
+        endDate: datetime.date,
+        smallestLotSize: ForexLotSizes = ForexLotSizes.NONE,
     ):
         """
         Creates a new ticker.
@@ -54,6 +57,14 @@ class Ticker(ABC):
         self.classification = classification
         self.startDate = startDate
         self.endDate = endDate
+
+        # Set the smallest lot size if the ticker is a forex ticker
+        if(self.classification == TickerClassification.FOREX):
+            if(smallestLotSize == ForexLotSizes.NONE):
+                raise ValueError(
+                    "A minimum lot size must be specified for forex tickers.")
+            
+            self.smallestLotSize = smallestLotSize
 
     @property
     def symbol(self) -> str:

@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>chart.html</title>
+        <style type="text/css">
+          .end-element { fill : #FFCCFF; }
+        </style>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.3.0/raphael.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/flowchart/1.17.1/flowchart.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.1/js/bootstrap.bundle.min.js"></script>
+        <!-- <script src="../release/flowchart.min.js"></script> -->
+        <script>
+
+            window.onload = function () {
+                var btn = document.getElementById("run"),
+                    cd = document.getElementById("code"),
+                    chart;
+                    
+                (btn.onclick = function () {
+                    var code = cd.value;
+
+                    if (chart) {
+                      chart.clean();
+                    }
+
+                    chart = flowchart.parse(code);
+                    chart.drawSVG('canvas', {
+                      'x': 0,
+                      'y': 0,
+                      'line-width': 3,
+                      //'maxWidth': 15,//ensures the flowcharts fits within a certain width
+                      'line-length': 50,
+                      'text-margin': 10,
+                      'font-size': 14,
+                      'font': 'normal',
+                      'font-family': 'Helvetica',
+                      'font-weight': 'normal',
+                      'font-color': 'black',
+                      'line-color': 'black',
+                      'element-color': 'black',
+                      'fill': 'white',
+                      'yes-text': 'yes',
+                      'no-text': 'no',
+                      'arrow-end': 'block',
+                      'scale': 1,
+                      'symbols': {
+                        'start': {
+                          'font-size': 14,
+                          'font-color': 'yellow',
+                          'element-color': 'blue',
+                          'fill': 'green',
+                          'class': 'start-element'
+                        },
+                        'inputoutput': {
+                          'font-color': 'black',
+                          'element-color': 'black',
+                          'fill': 'bisque'
+                        },
+                        'operation': {
+                          'font-color': 'black',
+                          'element-color': 'black',
+                          'fill': 'linen'
+                        },
+                        'subroutine': {
+                          'font-color': 'black',
+                          'element-color': 'blue',
+                          'fill': 'lightgreen'
+                        },
+                        'condition': {
+                          'font-color': 'red',
+                          'element-color': 'black',
+                          'fill': 'yellow'
+                        },
+                        'end':{
+                          'font-size': 20,
+                          'class': 'end-element'
+                        }
+                      },
+                      'flowstate' : {
+                        //'past' : { 'fill' : '#CCCCCC', 'font-size' : 12},
+                        //'current' : {'fill' : 'yellow', 'font-color' : 'red', 'font-weight' : 'bold'},
+                        //'future' : { 'fill' : '#FFFF99'},
+                        'request' : { 'fill' : 'blue'},
+                        'invalid': {'fill' : '#444444'},
+                        'approved' : { 'fill' : '#58C4A3', 'font-size' : 12, 'yes-text' : 'APPROVED', 'no-text' : 'n/a' },
+                        'rejected' : { 'fill' : '#C45879', 'font-size' : 12, 'yes-text' : 'n/a', 'no-text' : 'REJECTED' }
+                      }
+                    });
+                    //create base64 encoding of SVG to generate download link for title(without html or htm).SVG
+                    var currentCanvasDIV = document.getElementById('canvas')
+                    var currentDrawSVG = currentCanvasDIV.innerHTML.replaceAll('ë','e');
+
+                    const OUTsvgBASE64 = btoa(currentDrawSVG)
+                    doctitle = document.title.replace('.html','');
+                    doctitle = doctitle.replace('.htm','');
+
+
+                    var currentCanvasDIV = document.getElementById('canvas')
+                    var currentDrawSVG = currentCanvasDIV.innerHTML.replaceAll('ë','e');
+                    svgSource = currentDrawSVG
+                    svgXML = currentDrawSVG;
+                    // Use SVG Height and Width from the SVG XML to set canvas size
+                    svgXMLsubstringHeight = svgXML.substring(svgXML.indexOf('height='), svgXML.indexOf('version='));
+                    svgXMLsubstringWidth = svgXML.substring(svgXML.indexOf('width='), svgXML.indexOf('xmlns='));
+                    HeightValue = svgXMLsubstringHeight.substring(svgXMLsubstringHeight.indexOf('"')+1,svgXMLsubstringHeight.lastIndexOf('"'));
+                    WidthValue = svgXMLsubstringWidth.substring(svgXMLsubstringWidth.indexOf('"')+1,svgXMLsubstringWidth.lastIndexOf('"'));
+                    HeightValueInt = Math.round(HeightValue)
+                    WidthValueInt = Math.round(WidthValue)
+                    // setup input for base64SvgToBase64Png
+                    let svgSrc = "data:image/svg+xml;base64,"+OUTsvgBASE64;
+                    var pngBase
+                    imageUtil.base64SvgToBase64Png(svgSrc, WidthValueInt, HeightValueInt).then(pngSrc => {
+                    pngBase = pngSrc
+                    // output download link for base64 PNG converted on download from base64
+                    var pngOutHtml = `<a href="${pngBase}" download="${doctitle}.png">PNG - Click here to download current rendered flowchart as ${doctitle}.png</a>`
+                    document.getElementById("pngbase64").innerHTML=pngOutHtml;
+                    });    
+                    // output download link for base64 SVG converted on download from base64
+                    var svgOutHtml = `<a href="data:image/svg+xml;base64,${OUTsvgBASE64}" download=${doctitle}.svg>SVG - Click here to download current rendered flowchart as ${doctitle}.svg</a> `
+                        document.getElementById("svgbase64").innerHTML=svgOutHtml;
+                    })();
+
+                            };
+                 
+
+// derived from https://stackoverflow.com/a/64800570
+// we need to use web browser canvas to generate a image. In this case png
+let imageUtil = {};
+/**
+ * converts a base64 encoded data url SVG image to a PNG image
+ * @param originalBase64 data url of svg image
+ * @param width target width in pixel of PNG image
+ * @param secondTry used internally to prevent endless recursion
+ * @return {Promise<unknown>} resolves to png data url of the image
+ */
+imageUtil.base64SvgToBase64Png = function (originalBase64, width, height, secondTry) {
+    return new Promise(resolve => {
+        let img = document.createElement('img');
+        img.onload = function () {
+            if (!secondTry && (img.naturalWidth === 0 || img.naturalHeight === 0)) {
+                let svgDoc = base64ToSvgDocument(originalBase64);
+                let fixedDoc = fixSvgDocumentFF(svgDoc);
+                return imageUtil.base64SvgToBase64Png(svgDocumentToBase64(fixedDoc), width, height, true).then(result => {
+                    resolve(result);
+                });
+            }
+            //document.body.appendChild(img);
+            let canvas2 = document.createElement("canvas");
+            //document.body.removeChild(img);
+            canvas2.width = width;
+            canvas2.height = height;
+            let ctx = canvas2.getContext("2d");
+            ctx.drawImage(img, 0, 0, canvas2.width, canvas2.height);
+            try {
+                let data = canvas2.toDataURL('image/png');
+                resolve(data);
+            } catch (e) {
+                resolve(null);
+            }
+        };
+        img.src = originalBase64;
+    });
+}
+
+//needed because Firefox doesn't correctly handle SVG with size = 0, see https://bugzilla.mozilla.org/show_bug.cgi?id=700533
+function fixSvgDocumentFF(svgDocument) {
+    try {
+        let widthInt = parseInt(svgDocument.documentElement.width.baseVal.value) || 500;
+        let heightInt = parseInt(svgDocument.documentElement.height.baseVal.value) || 500;
+        svgDocument.documentElement.width.baseVal.newValueSpecifiedUnits(SVGLength.SVG_LENGTHTYPE_PX, widthInt);
+        svgDocument.documentElement.height.baseVal.newValueSpecifiedUnits(SVGLength.SVG_LENGTHTYPE_PX, heightInt);
+        return svgDocument;
+    } catch (e) {
+        return svgDocument;
+    }
+}
+
+function svgDocumentToBase64(svgDocument) {
+    try {
+        let base64EncodedSVG = btoa(new XMLSerializer().serializeToString(svgDocument));
+        return 'data:image/svg+xml;base64,' + base64EncodedSVG;
+    } catch (e) {
+        return null;
+    }
+}
+
+function base64ToSvgDocument(base64) {
+    let svg = atob(base64.substring(base64.indexOf('base64,') + 7));
+    svg = svg.substring(svg.indexOf('<svg'));
+    let parser = new DOMParser();
+    return parser.parseFromString(svg, "image/svg+xml");
+} 
+        </script>
+
+        <script>
+            function HelpText() {
+              var x = document.getElementById("HelpTextBlock");
+              if (x.style.display === "none") {
+                x.style.display = "block";
+              } else {
+                x.style.display = "none";
+              }
+            }
+        </script>
+    </head>
+    <body>
+        <div><textarea id="code" style="width: 100%;" rows="11">op2=>operation: from ast import List
+op4=>operation: from email.mime import base
+op6=>operation: from enum import Enum, auto
+op8=>operation: from xmlrpc.client import Boolean
+op10=>operation: from backtesting import Backtest, Strategy
+op12=>operation: from backtesting.lib import crossover
+op14=>operation: from backtesting.test import SMA, GOOG
+op16=>operation: from numpy import cross
+op18=>operation: from rtbbacktester.rtb_Indicators.Indicators.Other.ATRIndicator import ATRIndicator
+op20=>operation: from .IndicatorCombination import IndicatorCombination
+op22=>operation: from .BacktesterOptions import BacktesterOptions
+op24=>operation: from .StrategyStates import StrategyStates
+op26=>operation: import datetime
+op28=>operation: class rtbStrategy(Strategy):
+    '\n    rtbStrategy class to define the strategy that will be used in the backtest. The backtester \n    controls the backtesting process, this class controls the algorithm that will be backtested.\n    '
+    indicatorCombination: IndicatorCombination = None
+    options: BacktesterOptions = None
+    state: StrategyStates = StrategyStates.NONE
+    StrategyOutput = None
+
+    def init(self):
+        super().init()
+        self.c1 = self.I(self.indicatorCombination.c1.calculate_signals, self.data.df, name='C1')
+        self.c2 = self.I(self.indicatorCombination.c2.calculate_signals, self.data.df, name='C2')
+        self.baseline = self.I(self.indicatorCombination.baseline.calculate_signals, self.data.df, name='Baseline')
+        self.volume = self.I(self.indicatorCombination.volume.calculate_signals, self.data.df, name='Volume')
+        self.ATR = self.I(ATRIndicator().calculate_values, self.data.df, name='ATR')
+
+    def handle_baseline_Rejection(self, state_log):
+        '\n        Helper function to handle the baseline rejection cases\n\n        Args:\n            state_log : The log of the states that have been passed through\n        '
+        if (not (self.state == StrategyStates.C1_ENTRY_1Candle_WAITING)):
+            state_log.append(StrategyStates.BASELINE_SINGLE_REJECTION)
+            self.state = StrategyStates.C1_ENTRY_1Candle_WAITING
+        elif (self.state == StrategyStates.C1_ENTRY_1Candle_WAITING):
+            self.state = StrategyStates.NONE
+            state_log.append(StrategyStates.BASELINE_DOUBLE_REJECTION)
+            state_log.append(StrategyStates.NO_TRADE)
+
+    def handle_FuCandle_Rejection(self, state_log, originState: StrategyStates) -> None:
+        '\n        Helper function to handle the FU Candle rejection cases\n\n        Args:\n            state_log : The log of the states that have been passed through\n\n        Returns:\n            None\n        '
+        if ((originState == StrategyStates.C1_LONG) or (originState == StrategyStates.C1_SHORT)):
+            if (not (self.state == StrategyStates.C1_ENTRY_1Candle_WAITING)):
+                state_log.append(StrategyStates.FU_SINGLE_REJECTION)
+                self.state = StrategyStates.C1_ENTRY_1Candle_WAITING
+            elif (self.state == StrategyStates.C1_ENTRY_1Candle_WAITING):
+                self.state = StrategyStates.NO_TRADE
+                state_log.append(StrategyStates.FU_DOUBLE_REJECTION)
+                state_log.append(StrategyStates.NO_TRADE)
+        elif ((originState == StrategyStates.BASELINE_LONG) or (originState == StrategyStates.BASELINE_SHORT)):
+            if (not (self.state == StrategyStates.BASELINE_ENTRY_1Candle_WAITING)):
+                state_log.append(StrategyStates.FU_SINGLE_REJECTION)
+                self.state = StrategyStates.BASELINE_ENTRY_1Candle_WAITING
+            elif (self.state == StrategyStates.BASELINE_ENTRY_1Candle_WAITING):
+                self.state = StrategyStates.NO_TRADE
+                state_log.append(StrategyStates.FU_DOUBLE_REJECTION)
+                state_log.append(StrategyStates.NO_TRADE)
+
+    def handle_C2_Rejection(self, state_log, originState: StrategyStates) -> None:
+        '\n        Helper function to handle the C2 rejection cases\n\n        Args:\n            state_log : The log of the states that have been passed through\n        '
+        if ((originState == StrategyStates.C1_LONG) or (originState == StrategyStates.C1_SHORT)):
+            if (not (self.state == StrategyStates.C1_ENTRY_1Candle_WAITING)):
+                state_log.append(StrategyStates.C2_SINGLE_REJECTION)
+                self.state = StrategyStates.C1_ENTRY_1Candle_WAITING
+            elif (self.state == StrategyStates.C1_ENTRY_1Candle_WAITING):
+                self.state = StrategyStates.NO_TRADE
+                state_log.append(StrategyStates.C2_DOUBLE_REJECTION)
+                state_log.append(StrategyStates.NO_TRADE)
+        elif ((originState == StrategyStates.BASELINE_LONG) or (originState == StrategyStates.BASELINE_SHORT)):
+            state_log.append(StrategyStates.C2_SINGLE_REJECTION)
+            self.state = StrategyStates.NO_TRADE
+
+    def handle_Volume_Rejection(self, state_log, originState: StrategyStates) -> None:
+        '\n        Helper function to handle the Volume rejection cases\n\n        Args:\n            state_log : The log of the states that have been passed through\n        '
+        if ((originState == StrategyStates.C1_LONG) or (originState == StrategyStates.C1_SHORT)):
+            if (not (self.state == StrategyStates.C1_ENTRY_1Candle_WAITING)):
+                state_log.append(StrategyStates.VOLUME_SINGLE_REJECTION)
+                self.state = StrategyStates.C1_ENTRY_1Candle_WAITING
+            elif (self.state == StrategyStates.C1_ENTRY_1Candle_WAITING):
+                self.state = StrategyStates.NONE
+                state_log.append(StrategyStates.VOLUME_DOUBLE_REJECTION)
+                state_log.append(StrategyStates.NO_TRADE)
+        elif ((originState == StrategyStates.BASELINE_LONG) or (originState == StrategyStates.BASELINE_SHORT)):
+            state_log.append(StrategyStates.VOLUME_SINGLE_REJECTION)
+            self.state = StrategyStates.NO_TRADE
+
+    def handle_Flip_Exits(self, state_log):
+
+        def handle_Flip_Exit(condition: Boolean, exit_state: StrategyStates, state_log):
+            if condition:
+                self.position.close()
+                self.state = exit_state
+                state_log.append(self.state)
+        if self.position.is_long:
+            handle_Flip_Exit(condition=crossover(0, self.baseline), exit_state=StrategyStates.BASELINE_FLIP_EXIT_LONG, state_log=state_log)
+            handle_Flip_Exit(condition=crossover(0, self.c1), exit_state=StrategyStates.C1_FLIP_EXIT_LONG, state_log=state_log)
+            handle_Flip_Exit(condition=crossover(0, self.c2), exit_state=StrategyStates.C2_FLIP_EXIT_LONG, state_log=state_log)
+        elif self.position.is_short:
+            handle_Flip_Exit(condition=crossover(self.baseline, 0), exit_state=StrategyStates.BASELINE_FLIP_EXIT_SHORT, state_log=state_log)
+            handle_Flip_Exit(condition=crossover(self.c1, 0), exit_state=StrategyStates.C1_FLIP_EXIT_SHORT, state_log=state_log)
+            handle_Flip_Exit(condition=crossover(self.c2, 0), exit_state=StrategyStates.C2_FLIP_EXIT_SHORT, state_log=state_log)
+
+    def next(self):
+        stateLog = []
+        WarmUpDate = (self.options.start_date + self.options.warm_up_period.value)
+        if (self.data.index.max() >= WarmUpDate):
+            c1_entry = (crossover(self.c1, 0) or crossover(0, self.c1))
+            baseline_entry = (crossover(self.baseline, 0) or crossover(0, self.baseline))
+            if (c1_entry or (self.state == StrategyStates.C1_ENTRY_1Candle_WAITING)):
+                positionType = (lambda c1: {1: StrategyStates.C1_LONG, (- 1): StrategyStates.C1_SHORT}.get(c1, StrategyStates.NONE))(self.c1[(- 1)])
+                stateLog.append(positionType)
+                BaselineConfirmation = (self.baseline[(- 1)] == self.c1[(- 1)])
+                if BaselineConfirmation:
+                    FuCandleConfirmation = (lambda positionType: {StrategyStates.C1_LONG: (self.data.Close[(- 1)] <= (self.baseline[(- 1)] + self.ATR[(- 1)])), StrategyStates.C1_SHORT: (self.data.Close[(- 1)] >= (self.baseline[(- 1)] - self.ATR[(- 1)]))}.get(positionType, False))(positionType)
+                    if FuCandleConfirmation:
+                        C2Confirmation = (self.c2[(- 1)] == self.c1[(- 1)])
+                        if C2Confirmation:
+                            continuationTrade = False
+                            if (len(self.closed_trades) > 0):
+                                baselineFlipDate = next((self.data.index[(- (i + 1))] for i in range((self.data.index.max() - WarmUpDate).days) if (self.baseline[(- (i + 1))] != self.baseline[(- 1)])), None)
+                                if (not (baselineFlipDate == None)):
+                                    for trade in self.closed_trades:
+                                        if (type(trade.entry_time) == type(baselineFlipDate)):
+                                            con1 = (trade.entry_time > baselineFlipDate)
+                                            con2 = (trade.exit_time <= self.data.index[(- 1)])
+                                            if (con1 and con2):
+                                                continuationTrade = True
+                                                stateLog.append(StrategyStates.CONTINUATION)
+                                                break
+                            if (not continuationTrade):
+                                volumeConfirmation = (self.volume[(- 1)] == self.c1[(- 1)])
+                                if volumeConfirmation:
+                                    if (positionType == StrategyStates.C1_LONG):
+                                        self.state = StrategyStates.C1_LONG_ENTRY
+                                    elif (positionType == StrategyStates.C1_SHORT):
+                                        self.state = StrategyStates.C1_SHORT_ENTRY
+                                elif (not volumeConfirmation):
+                                    self.handle_Volume_Rejection(stateLog, originState=positionType)
+                            elif continuationTrade:
+                                if (positionType == StrategyStates.C1_LONG):
+                                    self.state = StrategyStates.C1_LONG_ENTRY
+                                elif (positionType == StrategyStates.C1_SHORT):
+                                    self.state = StrategyStates.C1_SHORT_ENTRY
+                        elif (not C2Confirmation):
+                            self.handle_C2_Rejection(stateLog, originState=positionType)
+                    elif (not FuCandleConfirmation):
+                        self.handle_FuCandle_Rejection(stateLog, originState=positionType)
+                elif (not BaselineConfirmation):
+                    self.handle_baseline_Rejection(stateLog)
+            if (baseline_entry or (self.state == StrategyStates.BASELINE_ENTRY_1Candle_WAITING)):
+                positionType = (lambda baseline: {1: StrategyStates.BASELINE_LONG, (- 1): StrategyStates.BASELINE_SHORT}.get(baseline, StrategyStates.NONE))(self.baseline[(- 1)])
+                stateLog.append(positionType)
+                c1_confirmation = (self.c1[(- 1)] == self.baseline[(- 1)])
+                if c1_confirmation:
+                    c1FlipDate = next((self.data.index[(- (i + 1))] for i in range(7) if (self.c1[(- (i + 1))] != self.c1[(- 1)])), None)
+                    if (c1FlipDate != None):
+                        FuCandleConfirmation = (lambda positionType: {StrategyStates.C1_LONG: (self.data.Close[(- 1)] <= (self.baseline[(- 1)] + self.ATR[(- 1)])), StrategyStates.C1_SHORT: (self.data.Close[(- 1)] >= (self.baseline[(- 1)] - self.ATR[(- 1)]))}.get(positionType, False))(positionType)
+                        if FuCandleConfirmation:
+                            c2_confirmation = (self.c2[(- 1)] == self.c1[(- 1)])
+                            if c2_confirmation:
+                                volumeConfirmation = (self.volume[(- 1)] == self.c1[(- 1)])
+                                if volumeConfirmation:
+                                    if (positionType == StrategyStates.BASELINE_LONG):
+                                        self.state = StrategyStates.BASELINE_LONG_ENTRY
+                                    elif (positionType == StrategyStates.BASELINE_SHORT):
+                                        self.state = StrategyStates.BASELINE_SHORT_ENTRY
+                                elif (not volumeConfirmation):
+                                    self.handle_Volume_Rejection(stateLog, originState=positionType)
+                            elif (not c2_confirmation):
+                                self.handle_C2_Rejection(stateLog, originState=positionType)
+                        elif (not FuCandleConfirmation):
+                            self.handle_FuCandle_Rejection(stateLog, originState=positionType)
+                    elif (c1FlipDate == None):
+                        stateLog.append(StrategyStates.SEVEN_CANDLE_REJECTION)
+                        self.state = StrategyStates.NO_TRADE
+                elif (not c1_confirmation):
+                    stateLog.append(StrategyStates.C1_REJECTED)
+                    self.state = StrategyStates.NO_TRADE
+        else:
+            self.state = StrategyStates.WARMUP_PERIOD
+        tradeEntryCondition = (lambda state: {StrategyStates.C1_LONG_ENTRY: True, StrategyStates.C1_SHORT_ENTRY: True, StrategyStates.BASELINE_LONG_ENTRY: True, StrategyStates.BASELINE_SHORT_ENTRY: True}.get(state, False))(self.state)
+        if tradeEntryCondition:
+            stateLog.append(self.state)
+            isLong = (lambda state: {StrategyStates.C1_LONG_ENTRY: True, StrategyStates.BASELINE_LONG_ENTRY: True}.get(state, False))(self.state)
+            isShort = (lambda state: {StrategyStates.C1_SHORT_ENTRY: True, StrategyStates.BASELINE_SHORT_ENTRY: True}.get(state, False))(self.state)
+            if isLong:
+                stopLossPrice = (self.data.Close[(- 1)] - (self.ATR[(- 1)] * self.options.stopLossATRMultiple))
+                takeProfitPrice = (self.data.Close[(- 1)] + (self.ATR[(- 1)] * self.options.takeProfitATRMultiple))
+                TODO('Calculate position size for the Forex situation')
+                positionSize = ((self.options.cash * self.options.risk) / (self.data.Close[(- 1)] - stopLossPrice))
+                self.buy(size=positionSize, sl=stopLossPrice, tp=takeProfitPrice)
+                self.state = StrategyStates.LONG_ORDER_OPENED
+                stateLog.append(self.state)
+            elif isShort:
+                stopLossPrice = (self.data.Close[(- 1)] + (self.ATR[(- 1)] * self.options.stopLossATRMultiple))
+                takeProfitPrice = (self.data.Close[(- 1)] - (self.ATR[(- 1)] * self.options.takeProfitATRMultiple))
+                TODO('Calculate the position size for the Forex situation')
+                positionSize = ((self.options.cash * self.options.risk) / (stopLossPrice - self.data.Close[(- 1)]))
+                self.sell(size=positionSize, sl=stopLossPrice, tp=takeProfitPrice)
+                self.state = StrategyStates.SHORT_ORDER_OPENED
+                stateLog.append(self.state)
+        if self.position:
+            self.handle_Flip_Exits(stateLog)
+        super().next()
+        print(f'Date: {self.data.index.max()} | State: {self.state} | Log: {stateLog}')
+        self.StrategyOutput.append({'Date': self.data.index.max(), 'Open': self.data.Open[(- 1)], 'High': self.data.High[(- 1)], 'Low': self.data.Low[(- 1)], 'Close': self.data.Close[(- 1)], 'Volume': self.data.Volume[(- 1)], 'C1': self.c1[(- 1)], 'C2': self.c2[(- 1)], 'Baseline': self.baseline[(- 1)], 'Volume': self.volume[(- 1)], 'ATR': self.ATR[(- 1)], 'State': self.state, 'Log': stateLog})
+st31=>start: start TODO
+io33=>inputoutput: input: message
+op36=>operation: raise NotImplementedError(f'This function has not been implemented yet: {message}')
+e38=>end: end TODO
+
+op2->op4
+op4->op6
+op6->op8
+op8->op10
+op10->op12
+op12->op14
+op14->op16
+op16->op18
+op18->op20
+op20->op22
+op22->op24
+op24->op26
+op26->op28
+op28->st31
+st31->io33
+io33->op36
+op36->e38
+</textarea></div>
+        <div><button id="run" type="button">Run</button> <button onclick="HelpText()">Format Help</button></div>
+        <div id="HelpTextBlock" style="display:none"><br/>Conditions can also be redirected like cond(yes, bottom) or cond(yes, right)
+... and the other symbols too... like sub1(right)<br/>
+You can also tweak the <b>diagram.drawSVG('diagram', {});</b> script in this file for more changes<br/>
+This is based on <a href="https://github.com/adrai/flowchart.js">flowchart.js on github</a> and <a href="http://flowchart.js.org">http://flowchart.js.org</a> more documentation can be found over there.
+</div><br/><div id="svgbase64"></div>
+        <div id="pngbase64"></div>
+
+        <div id="canvas"></div>
+    </body>
+</html>

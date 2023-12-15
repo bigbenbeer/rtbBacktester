@@ -1,8 +1,6 @@
 from ast import List
 from email.mime import base
 from enum import Enum, auto
-from stringprep import c22_specials
-from turtle import position, st
 from xmlrpc.client import Boolean
 from backtesting import Backtest, Strategy
 from backtesting.lib import crossover
@@ -25,10 +23,10 @@ class rtbStrategy(Strategy):
     controls the backtesting process, this class controls the algorithm that will be backtested.
     """
     # The indicator combination to use for this run
-    indicatorCombination: IndicatorCombination = None # type: ignore
+    indicatorCombination: IndicatorCombination = None  # type: ignore
 
     # The options to use for this run
-    options: BacktesterOptions = None # type: ignore
+    options: BacktesterOptions = None  # type: ignore
 
     # The state of the strategy
     state: StrategyStates = StrategyStates.NONE
@@ -261,12 +259,12 @@ class rtbStrategy(Strategy):
         if (self.data.index.max() >= WarmUpDate):
 
             # C1 Entry
-            c1_entry = crossover(self.c1, 0) or crossover(
-                0, self.c1)
+            c1_entry = crossover(self.c1, 0) or crossover(  # type: ignore
+                0, self.c1)  # type: ignore
 
             # Baseline Entry
-            baseline_entry = crossover(self.baseline, 0) or crossover(
-                0, self.baseline)
+            baseline_entry = crossover(self.baseline, 0) or crossover(  # type: ignore
+                0, self.baseline)  # type: ignore
 
             # Handle the C1 entry cases
             if (c1_entry or self.state == StrategyStates.C1_ENTRY_1Candle_WAITING):
@@ -315,9 +313,9 @@ class rtbStrategy(Strategy):
 
                                         # Do a type check
                                         if (type(trade.entry_time) == type(baselineFlipDate)):
-                                            con1 = trade.entry_time > baselineFlipDate
+                                            con1 = trade.entry_time > baselineFlipDate  # type: ignore
 
-                                            con2 = trade.exit_time <= self.data.index[-1]
+                                            con2 = trade.exit_time <= self.data.index[-1]  # type: ignore # nopep8
                                             if (con1 and con2):
                                                 continuationTrade = True
                                                 stateLog.append(
@@ -550,6 +548,6 @@ class rtbStrategy(Strategy):
         })
 
 
-def TODO(message:str = ""):
+def TODO(message: str = ""):
     raise NotImplementedError(
         f"This function has not been implemented yet: {message}")

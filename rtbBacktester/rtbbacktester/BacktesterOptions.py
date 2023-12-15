@@ -38,5 +38,5 @@ class BacktesterOptions:
     # The take profit multiple of the ATR
     takeProfitATRMultiple: float = 1.0
 
-    # Minimum lot size for FOREX
-    minimumLotSize: ForexLotSizes = ForexLotSizes.MINI
+    # Smallest lot size for FOREX
+    smallestLotSize: ForexLotSizes = ForexLotSizes.MINI

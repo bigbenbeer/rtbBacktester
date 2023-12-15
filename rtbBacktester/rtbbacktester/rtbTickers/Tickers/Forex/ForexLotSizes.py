@@ -6,3 +6,4 @@ class ForexLotSizes(Enum):
     MINI = 10000
     MICRO = 1000
     NANO = 100
+    NONE = 0
